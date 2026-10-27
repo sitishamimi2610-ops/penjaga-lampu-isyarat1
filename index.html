@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penjaga Lampu Isyarat - Permainan Prasekolah</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Quicksand untuk visual comel & jelas -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'road-gray': '#3A3D40',
+                        'traffic-red': '#FF4B4B',
+                        'traffic-yellow': '#FFC107',
+                        'traffic-green': '#2ECC71',
+                        'sky-blue': '#4FC3F7',
+                        'sunny-yellow': '#FFF176',
+                        'kid-purple': '#AB47BC',
+                        'kid-orange': '#FF7043'
+                    },
+                    fontFamily: {
+                        'fredoka': ['Fredoka', 'sans-serif'],
+                        'quicksand': ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Quicksand', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: #4FC3F7;
+            overflow-x: hidden;
+        }
+
+        /* Animasi tersuai */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)); }
+            50% { filter: drop-shadow(0 0 25px rgba(255, 235, 59, 1)); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 1.5s infinite ease-in-out;
+        }
+
+        @keyframes light-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .blink-red { animation: light-blink 1s infinite; }
+        .blink-yellow { animation: light-blink 1.2s infinite; }
+        .blink-green { animation: light-blink 0.8s infinite; }
+
+        /* Style Khas Jalur Jalan Raya */
+        .road-pattern {
+            background-color: #3A3D40;
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 40px, #FFFFFF 40px, #FFFFFF 80px);
+            background-size: 100% 20px;
+            background-position: center bottom;
+            background-repeat: repeat-x;
+        }
+
+        /* Button Press Effect */
+        .btn-kid {
+            transition: all 0.1s ease;
+            box-shadow: 0px 8px 0px rgba(0, 0, 0, 0.2);
+        }
+        .btn-kid:active:not(:disabled) {
+            transform: translateY(6px);
+            box-shadow: 0px 2px 0px rgba(0, 0, 0, 0.2);
+        }
+        .btn-kid:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #E0F7FA;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FF7043;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-800 relative bg-gradient-to-b from-sky-300 via-sky-200 to-green-200">
+
+    <!-- BAR KAWALAN UTAMA / HEADER (Muzik, FX, Voiceover, Utama) -->
+    <header class="w-full bg-white/90 backdrop-blur-md p-3 shadow-md border-b-4 border-yellow-400 flex flex-wrap justify-between items-center gap-2 z-50 sticky top-0">
+        <div class="flex items-center gap-2">
+            <button id="btnHome" onclick="confirmGoHome()" class="hidden bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-2xl font-bold flex items-center gap-1 shadow transition">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="hidden sm:inline">Utama</span>
+            </button>
+            <div class="flex items-center gap-2 bg-yellow-100 px-3 py-1.5 rounded-full border-2 border-yellow-300">
+                <span class="text-xl">🚦</span>
+                <h1 class="font-bold text-sm sm:text-base text-gray-800 tracking-wide">PENJAGA LAMPU ISYARAT</h1>
+            </div>
+        </div>
+
+        <!-- Kawalan Audio & Suara -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <button id="btnToggleBGM" onclick="toggleBGM()" class="bg-purple-500 text-white p-2.5 rounded-full hover:bg-purple-600 transition shadow flex items-center justify-center w-10 h-10" title="Muzik Latar ON/OFF">
+                <i id="iconBGM" class="fa-solid fa-music text-base"></i>
+            </button>
+            <button id="btnToggleSFX" onclick="toggleSFX()" class="bg-blue-500 text-white p-2.5 rounded-full hover:bg-blue-600 transition shadow flex items-center justify-center w-10 h-10" title="Kesan Bunyi ON/OFF">
+                <i id="iconSFX" class="fa-solid fa-volume-high text-base"></i>
+            </button>
+            <button onclick="openVoiceModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow transition">
+                <i class="fa-solid fa-microphone text-sm"></i>
+                <span>Rakaman Suara Guru</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- KANDUNGAN UTAMA (MENGIKUT SKRIN) -->
+    <main class="flex-grow container mx-auto p-4 flex flex-col justify-center items-center z-10 my-2">
+
+        <!-- ================= SKRIN 1: HALAMAN UTAMA ================= -->
+        <section id="screen1" class="w-full max-w-3xl flex flex-col items-center text-center py-4">
+            <!-- Tajuk Utama -->
+            <div class="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-4 border-yellow-400 shadow-xl mb-6 w-full animate-bounce-slow">
+                <div class="flex justify-center gap-3 text-4xl mb-2">
+                    <span>🚗</span>
+                    <span>🚦</span>
+                    <span>🚌</span>
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-black text-traffic-red drop-shadow-md tracking-wider">
+                    PENJAGA LAMPU ISYARAT
+                </h1>
+                <p class="text-lg sm:text-2xl text-blue-800 font-bold mt-2">
+                    “Jom Pilih Penjaga, Jom Jaga Keselamatan!”
+                </p>
+            </div>
+
+            <!-- Ilustrasi Jalan Raya & Lampu Isyarat -->
+            <div class="relative w-full max-w-md h-48 bg-gray-700 rounded-3xl border-4 border-white shadow-inner flex justify-around items-end pb-4 overflow-hidden mb-6">
+                <!-- Zebra Crossing Background -->
+                <div class="absolute inset-0 bg-gray-600 flex justify-around items-center opacity-40">
+                    <div class="w-8 h-full bg-white"></div>
+                    <div class="w-8 h-full bg-white"></div>
+                    <div class="w-8 h-full bg-white"></div>
+                    <div class="w-8 h-full bg-white"></div>
+                </div>
+
+                <!-- Traffic Light Graphic -->
+                <div class="z-10 bg-gray-900 border-2 border-yellow-400 p-2 rounded-2xl flex flex-col gap-2 shadow-lg mb-2">
+                    <div class="w-8 h-8 rounded-full bg-red-500 blink-red border border-white"></div>
+                    <div class="w-8 h-8 rounded-full bg-yellow-400 blink-yellow border border-white"></div>
+                    <div class="w-8 h-8 rounded-full bg-green-500 blink-green border border-white"></div>
+                </div>
+
+                <!-- Cute Vehicles -->
+                <div class="z-10 text-5xl animate-pulse">🚙</div>
+                <div class="z-10 text-5xl">🚌</div>
+                <div class="z-10 text-5xl">🛑</div>
+            </div>
+
+            <!-- Butang Mula -->
+            <button onclick="playVoice('vo1'); goToScreen('screen2')" class="btn-kid bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-extrabold text-2xl sm:text-3xl px-10 py-5 rounded-3xl border-4 border-white shadow-2xl flex items-center gap-3 cursor-pointer">
+                <i class="fa-solid fa-play text-3xl"></i>
+                <span>MULA SEKARANG!</span>
+            </button>
+        </section>
+
+        <!-- ================= SKRIN 2: MASUKKAN MURID ================= -->
+        <section id="screen2" class="w-full max-w-4xl hidden flex-col items-center">
+            <div class="bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-3xl border-4 border-blue-400 shadow-xl w-full mb-4 text-center">
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-blue-700 flex items-center justify-center gap-2">
+                    <span>👦👧</span> KENALI 5 RAKAN KITA!
+                </h2>
+                <p class="text-gray-600 text-sm sm:text-base mt-1">Sila muat naik gambar dan masukkan nama bagi kelima-lima murid.</p>
+            </div>
+
+            <!-- Mesej Amaran/Peringatan Mesra -->
+            <div id="studentWarning" class="hidden w-full bg-yellow-100 border-2 border-yellow-400 text-yellow-800 px-4 py-3 rounded-2xl mb-4 text-center font-bold animate-pulse text-base sm:text-lg">
+                😊 Mari lengkapkan semua 5 nama dan gambar murid dahulu ya!
+            </div>
+
+            <!-- Grid 5 Murid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full mb-6">
+                <!-- Slot Murid 1 hingga 5 akan dihasilkan secara dinamik oleh JS -->
+                <div id="studentCardsContainer" class="contents"></div>
+            </div>
+
+            <!-- Butang Navigasi Skrin 2 -->
+            <div class="flex gap-4 w-full justify-between items-center max-w-md">
+                <button onclick="goToScreen('screen1')" class="btn-kid bg-gray-400 hover:bg-gray-500 text-white font-bold px-6 py-3 rounded-2xl flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali
+                </button>
+                <button id="btnCompleteStudents" onclick="validateAndProceedToSpin()" class="btn-kid bg-green-500 hover:bg-green-600 text-white font-extrabold text-lg sm:text-xl px-8 py-3 rounded-2xl border-2 border-white shadow-lg flex items-center gap-2">
+                    <span>SELESAI – JOM SPIN!</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SKRIN 3: PERSEDIAAN & ROA SPIN ================= -->
+        <section id="screen3" class="w-full max-w-4xl hidden flex-col items-center text-center">
+            <div class="bg-white/90 backdrop-blur-md p-4 rounded-3xl border-4 border-purple-400 shadow-xl w-full mb-4">
+                <h2 id="spinTitle" class="text-2xl sm:text-3xl font-extrabold text-purple-800">
+                    SIAPA AKAN MENJADI PENJAGA? 🚦
+                </h2>
+                <p id="spinSubtitle" class="text-base sm:text-lg font-bold text-gray-700 mt-1">
+                    Pemilihan Penjaga Lampu Isyarat Pertama (#1)
+                </p>
+            </div>
+
+            <!-- Senarai Ringkas Murid Layak -->
+            <div id="eligibleStudentsBar" class="flex flex-wrap justify-center gap-2 mb-4 bg-white/60 p-2 rounded-2xl border-2 border-white w-full">
+                <!-- Dijana dinamik oleh JS -->
+            </div>
+
+            <!-- Kontena Canvas Roda Pemilihan -->
+            <div class="relative flex justify-center items-center my-2">
+                <!-- Penunjuk Anak Panah (Pointer) -->
+                <div class="absolute -top-4 z-20 text-red-600 text-4xl sm:text-5xl drop-shadow-md transform transition">
+                    <i class="fa-solid fa-caret-down"></i>
+                </div>
+
+                <!-- Canvas Roda -->
+                <canvas id="wheelCanvas" width="360" height="360" class="max-w-full h-auto rounded-full shadow-2xl border-8 border-white bg-white"></canvas>
+            </div>
+
+            <!-- Butang Pusing Roda -->
+            <div class="mt-6">
+                <button id="btnSpin" onclick="startSpinProcess()" class="btn-kid bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-black text-2xl sm:text-3xl px-12 py-4 rounded-full border-4 border-white shadow-2xl flex items-center gap-3">
+                    <i class="fa-solid fa-arrows-spin text-3xl"></i>
+                    <span id="btnSpinText">SPIN!</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= POPUP / MODAL PEMILIHAN PERTAMA ================= -->
+        <div id="winnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex-col justify-center items-center p-4">
+            <div class="bg-white rounded-3xl border-8 border-yellow-400 p-6 sm:p-8 max-w-md w-full text-center shadow-2xl transform scale-95 transition-all animate-bounce-slow">
+                <div class="text-5xl mb-2">🎉 TAHNAH! 🎉</div>
+                <h3 id="winnerRoleText" class="text-xl sm:text-2xl font-black text-purple-700">PENJAGA LAMPU ISYARAT #1</h3>
+                
+                <!-- Avatar Winner -->
+                <div class="my-4 flex justify-center">
+                    <div class="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-8 border-green-400 overflow-hidden shadow-xl bg-yellow-100 flex items-center justify-center">
+                        <img id="winnerImg" src="" alt="Winner" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <h2 id="winnerName" class="text-2xl sm:text-4xl font-extrabold text-blue-800 mb-6">NAMA MURID</h2>
+
+                <button id="btnNextSpin" onclick="prepareSecondSpin()" class="btn-kid bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 text-white font-extrabold text-xl px-8 py-4 rounded-2xl w-full shadow-lg border-2 border-white flex items-center justify-center gap-2">
+                    <span>JOM PILIH SEORANG LAGI!</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= SKRIN 4: KEPUTUSAN AKHIR ================= -->
+        <section id="screen4" class="w-full max-w-4xl hidden flex-col items-center text-center relative">
+            <canvas id="confettiCanvas" class="absolute inset-0 pointer-events-none z-30 w-full h-full"></canvas>
+
+            <div class="bg-white/90 backdrop-blur-md p-4 rounded-3xl border-4 border-yellow-400 shadow-xl w-full mb-6 z-10 animate-pulse-glow">
+                <h1 class="text-3xl sm:text-5xl font-black text-red-600 flex items-center justify-center gap-2">
+                    <span>🚦</span> PENJAGA LAMPU ISYARAT <span>🚦</span>
+                </h1>
+                <p class="text-xl sm:text-2xl font-extrabold text-green-700 mt-2">
+                    “TAHNIAH! JOM JAGA LAMPU ISYARAT!”
+                </p>
+            </div>
+
+            <!-- Kad Dua Orang Penjaga -->
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-6 w-full mb-8 z-10">
+                <!-- Penjaga 1 -->
+                <div class="bg-white p-5 rounded-3xl border-4 border-green-500 shadow-2xl flex flex-col items-center w-full sm:w-72 transform hover:scale-105 transition">
+                    <span class="bg-green-500 text-white font-extrabold px-4 py-1 rounded-full text-sm mb-3">PENJAGA 1 🚦</span>
+                    <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-green-400 overflow-hidden shadow-md bg-green-50 mb-3">
+                        <img id="keeper1Img" src="" alt="Penjaga 1" class="w-full h-full object-cover">
+                    </div>
+                    <h3 id="keeper1Name" class="text-2xl font-black text-gray-800">Nama Murid 1</h3>
+                </div>
+
+                <!-- Ilustrasi Lampu Isyarat Tengah -->
+                <div class="bg-gray-900 border-4 border-yellow-400 p-3 rounded-3xl flex flex-col gap-3 shadow-xl z-20">
+                    <div class="w-10 h-10 rounded-full bg-red-500 blink-red border-2 border-white"></div>
+                    <div class="w-10 h-10 rounded-full bg-yellow-400 blink-yellow border-2 border-white"></div>
+                    <div class="w-10 h-10 rounded-full bg-green-500 blink-green border-2 border-white"></div>
+                </div>
+
+                <!-- Penjaga 2 -->
+                <div class="bg-white p-5 rounded-3xl border-4 border-blue-500 shadow-2xl flex flex-col items-center w-full sm:w-72 transform hover:scale-105 transition">
+                    <span class="bg-blue-500 text-white font-extrabold px-4 py-1 rounded-full text-sm mb-3">PENJAGA 2 🚦</span>
+                    <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-blue-400 overflow-hidden shadow-md bg-blue-50 mb-3">
+                        <img id="keeper2Img" src="" alt="Penjaga 2" class="w-full h-full object-cover">
+                    </div>
+                    <h3 id="keeper2Name" class="text-2xl font-black text-gray-800">Nama Murid 2</h3>
+                </div>
+            </div>
+
+            <!-- Pilihan Replay -->
+            <div class="flex flex-col sm:flex-row gap-4 z-10 w-full max-w-lg justify-center">
+                <button onclick="replaySameStudents()" class="btn-kid bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-extrabold text-lg px-6 py-4 rounded-2xl shadow-lg border-2 border-white flex items-center justify-center gap-2 flex-1">
+                    <i class="fa-solid fa-rotate-right text-xl"></i>
+                    <span>SPIN SEMULA (MURID SAMA)</span>
+                </button>
+                <button onclick="startNewGame()" class="btn-kid bg-red-500 hover:bg-red-600 text-white font-extrabold text-lg px-6 py-4 rounded-2xl shadow-lg border-2 border-white flex items-center justify-center gap-2 flex-1">
+                    <i class="fa-solid fa-plus text-xl"></i>
+                    <span>PERMAINAN BAHARU</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER / LINGKUNGAN VISUAL JALAN RAYA -->
+    <footer class="w-full h-14 road-pattern relative z-0 flex justify-between items-center px-6">
+        <div class="text-2xl animate-pulse">🚧</div>
+        <div class="text-2xl">🚸</div>
+        <div class="text-2xl">🚧</div>
+    </footer>
+
+    <!-- ================= MODAL RAKAMAN VOICE OVER GURU ================= -->
+    <div id="voiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden justify-center items-center p-4">
+        <div class="bg-white rounded-3xl border-4 border-orange-400 p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-2xl font-black text-orange-600 flex items-center gap-2">
+                    <i class="fa-solid fa-microphone"></i> Rakaman Suara Guru
+                </h3>
+                <button onclick="closeVoiceModal()" class="text-gray-400 hover:text-red-500 text-2xl font-bold">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Guru boleh merakam suara sendiri atau memuat naik audio bagi setiap skrin permainan.</p>
+
+            <div id="voiceListContainer" class="space-y-4">
+                <!-- Senarai 6 Rakaman Suara akan dihasilkan JS -->
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeVoiceModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-xl">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIK PERMAINAN & AUDIO -->
+    <script>
+        /* ================= STATE GLOBAL PERMAINAN ================= */
+        const defaultAvatar = 'https://placehold.co/150x150/FFD166/333333?text=Murid';
+
+        let students = [
+            { id: 1, name: '', image: '' },
+            { id: 2, name: '', image: '' },
+            { id: 3, name: '', image: '' },
+            { id: 4, name: '', image: '' },
+            { id: 5, name: '', image: '' }
+        ];
+
+        let selectedKeepers = [];
+        let eligibleForSpin = [];
+        let isSpinning = false;
+        let currentRound = 1; // Round 1 = Keeper 1, Round 2 = Keeper 2
+
+        // Kawalan Tetapan Audio
+        let bgmEnabled = true;
+        let sfxEnabled = true;
+
+        // Web Audio API Synth SFX & BGM
+        let audioCtx = null;
+        let bgmInterval = null;
+
+        // Data Suara Guru
+        const voiceConfigs = [
+            { id: 'vo1', label: '1. Pembukaan Utama', desc: 'cth: "Selamat datang ke permainan Penjaga Lampu Isyarat!"' },
+            { id: 'vo2', label: '2. Masukkan Murid', desc: 'cth: "Mari kenali 5 rakan kita hari ini."' },
+            { id: 'vo3', label: '3. Sebelum Spin #1', desc: 'cth: "Siapakah yang akan menjadi Penjaga Lampu Isyarat pertama?"' },
+            { id: 'vo4', label: '4. Selepas Terpilih #1', desc: 'cth: "Tahniah! Sekarang mari pilih seorang lagi."' },
+            { id: 'vo5', label: '5. Sebelum Spin #2', desc: 'cth: "Jom putar roda untuk pilih penjaga kedua!"' },
+            { id: 'vo6', label: '6. Keputusan Akhir', desc: 'cth: "Syabas! Inilah dua orang Penjaga Lampu Isyarat kita!"' }
+        ];
+
+        let teacherAudios = {}; // Menyimpan URL Blob audio guru
+
+        /* ================= INITIALIZATION ================= */
+        window.onload = function() {
+            initStudentCards();
+            renderVoiceList();
+            drawWheel();
+
+            // Inisialisasi Audio Context semasa interaksi pertama
+            document.body.addEventListener('click', initAudioContext, { once: true });
+        };
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (bgmEnabled) startBGM();
+            }
+        }
+
+        /* ================= SYSTEM AUDIO SYNTHESIZER (WEB AUDIO API) ================= */
+        function playClickSFX() {
+            if (!sfxEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
+        }
+
+        function playWhooshSFX() {
+            if (!sfxEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playVictorySFX() {
+            if (!sfxEnabled || !audioCtx) return;
+            const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime + idx * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.1 + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + idx * 0.1);
+                osc.stop(audioCtx.currentTime + idx * 0.1 + 0.3);
+            });
+        }
+
+        // Muzik Latar Ceria Synthesized
+        function startBGM() {
+            if (bgmInterval || !bgmEnabled || !audioCtx) return;
+            const melody = [261.63, 329.63, 392.00, 329.63, 349.23, 392.00, 440.00, 392.00];
+            let noteIdx = 0;
+
+            bgmInterval = setInterval(() => {
+                if (!bgmEnabled || !audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(melody[noteIdx], audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Lembut & tidak mengganggu
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+
+                noteIdx = (noteIdx + 1) % melody.length;
+            }, 400);
+        }
+
+        function stopBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
+            }
+        }
+
+        function toggleBGM() {
+            playClickSFX();
+            bgmEnabled = !bgmEnabled;
+            const btn = document.getElementById('iconBGM');
+            if (bgmEnabled) {
+                btn.className = 'fa-solid fa-music text-base';
+                startBGM();
+            } else {
+                btn.className = 'fa-solid fa-volume-xmark text-base';
+                stopBGM();
+            }
+        }
+
+        function toggleSFX() {
+            sfxEnabled = !sfxEnabled;
+            playClickSFX();
+            const btn = document.getElementById('iconSFX');
+            btn.className = sfxEnabled ? 'fa-solid fa-volume-high text-base' : 'fa-solid fa-volume-xmark text-base';
+        }
+
+        /* ================= NAVIGASI SKRIN ================= */
+        function goToScreen(screenId) {
+            playClickSFX();
+            ['screen1', 'screen2', 'screen3', 'screen4'].forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }
+            });
+
+            // Kawalan Butang Home
+            const btnHome = document.getElementById('btnHome');
+            if (screenId === 'screen1') {
+                btnHome.classList.add('hidden');
+            } else {
+                btnHome.classList.remove('hidden');
+            }
+
+            if (screenId === 'screen2') {
+                playVoice('vo2');
+            }
+        }
+
+        function confirmGoHome() {
+            if (confirm("Adakah anda pasti mahu kembali ke Halaman Utama?")) {
+                goToScreen('screen1');
+            }
+        }
+
+        /* ================= PENGURUSAN DATA MURID (SKRIN 2) ================= */
+        function initStudentCards() {
+            const container = document.getElementById('studentCardsContainer');
+            container.innerHTML = '';
+
+            students.forEach((s, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-3 rounded-2xl border-4 border-sky-300 shadow-md flex flex-col items-center justify-between";
+                card.innerHTML = `
+                    <div class="text-xs font-bold bg-sky-200 text-sky-800 px-3 py-1 rounded-full mb-2">MURID #${idx + 1}</div>
+                    
+                    <!-- Avatar Preview -->
+                    <div class="relative w-24 h-24 rounded-full border-4 border-yellow-400 overflow-hidden bg-gray-100 mb-2 group">
+                        <img id="imgPreview_${s.id}" src="${s.image || defaultAvatar}" class="w-full h-full object-cover">
+                    </div>
+
+                    <!-- Input Gambar -->
+                    <label class="cursor-pointer bg-orange-400 hover:bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow mb-2 flex items-center gap-1">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>${s.image ? 'Tukar Foto' : 'Muat Naik'}</span>
+                        <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event, ${s.id})">
+                    </label>
+
+                    <!-- Input Nama -->
+                    <div class="w-full">
+                        <input type="text" id="inputName_${s.id}" value="${s.name}" placeholder="Nama Murid..." 
+                            oninput="handleNameInput(${s.id}, this.value)"
+                            class="w-full text-center font-bold text-gray-800 border-2 border-gray-300 focus:border-sky-500 rounded-xl px-2 py-1 text-sm outline-none">
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleImageUpload(event, id) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const student = students.find(s => s.id === id);
+                    if (student) {
+                        student.image = e.target.result;
+                        document.getElementById(`imgPreview_${id}`).src = e.target.result;
+                        checkFormCompletion();
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleNameInput(id, val) {
+            const student = students.find(s => s.id === id);
+            if (student) {
+                student.name = val.trim();
+                checkFormCompletion();
+            }
+        }
+
+        function checkFormCompletion() {
+            const warning = document.getElementById('studentWarning');
+            const isComplete = students.every(s => s.name !== '' && s.image !== '');
+            if (isComplete) {
+                warning.classList.add('hidden');
+            }
+            return isComplete;
+        }
+
+        function validateAndProceedToSpin() {
+            if (!checkFormCompletion()) {
+                playClickSFX();
+                document.getElementById('studentWarning').classList.remove('hidden');
+                return;
+            }
+
+            // Dapatkan salinan murid untuk spin
+            eligibleForSpin = [...students];
+            selectedKeepers = [];
+            currentRound = 1;
+
+            prepareSpinScreen();
+            goToScreen('screen3');
+            playVoice('vo3');
+        }
+
+        /* ================= LOGIK RODA PEMILIHAN (SPIN WHEEL CANVAS) ================= */
+        const colors = ['#FF4B4B', '#2ECC71', '#FFC107', '#AB47BC', '#FF7043'];
+        let startAngle = 0;
+        let spinTimeout = null;
+        let spinAngleStart = 10;
+        let spinTime = 0;
+        let spinTimeTotal = 0;
+
+        function prepareSpinScreen() {
+            document.getElementById('spinTitle').innerText = "SIAPA AKAN MENJADI PENJAGA? 🚦";
+            document.getElementById('spinSubtitle').innerText = "Pemilihan Penjaga Lampu Isyarat Pertama (#1)";
+            document.getElementById('btnSpinText').innerText = "SPIN!";
+
+            renderEligibleBar();
+            drawWheel();
+        }
+
+        function renderEligibleBar() {
+            const bar = document.getElementById('eligibleStudentsBar');
+            bar.innerHTML = '<span class="w-full text-xs font-bold text-gray-500 mb-1">MURID DALAM RODA:</span>';
+            eligibleForSpin.forEach(s => {
+                const badge = document.createElement('div');
+                badge.className = "flex items-center gap-1.5 bg-white border-2 border-purple-300 px-3 py-1 rounded-full shadow-sm text-xs font-bold text-purple-900";
+                badge.innerHTML = `
+                    <img src="${s.image}" class="w-5 h-5 rounded-full object-cover">
+                    <span>${s.name}</span>
+                `;
+                bar.appendChild(badge);
+            });
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas.getContext) return;
+            const ctx = canvas.getContext('2d');
+            const outsideRadius = 160;
+            const textRadius = 110;
+            const insideRadius = 35;
+
+            ctx.clearRect(0, 0, 360, 360);
+
+            const numOptions = eligibleForSpin.length;
+            if (numOptions === 0) return;
+
+            const arc = Math.PI * 2 / numOptions;
+
+            for (let i = 0; i < numOptions; i++) {
+                const angle = startAngle + i * arc;
+                ctx.fillStyle = colors[i % colors.length];
+
+                // Lukis Sektor
+                ctx.beginPath();
+                ctx.arc(180, 180, outsideRadius, angle, angle + arc, false);
+                ctx.arc(180, 180, insideRadius, angle + arc, angle, true);
+                ctx.stroke();
+                ctx.fill();
+
+                // Teks Nama Murid
+                ctx.save();
+                ctx.fillStyle = "white";
+                ctx.font = 'bold 16px Fredoka, sans-serif';
+                ctx.translate(180 + Math.cos(angle + arc / 2) * textRadius, 180 + Math.sin(angle + arc / 2) * textRadius);
+                ctx.rotate(angle + arc / 2 + Math.PI / 2);
+                const text = eligibleForSpin[i].name;
+                ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+                ctx.restore();
+            }
+
+            // Pusat Roda
+            ctx.beginPath();
+            ctx.arc(180, 180, insideRadius, 0, Math.PI * 2, false);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#333333";
+            ctx.stroke();
+        }
+
+        function startSpinProcess() {
+            if (isSpinning) return;
+            playClickSFX();
+
+            isSpinning = true;
+            document.getElementById('btnSpin').disabled = true;
+
+            // Rawak Putaran
+            spinAngleStart = Math.random() * 10 + 20;
+            spinTime = 0;
+            spinTimeTotal = Math.random() * 3000 + 4000; // 4 - 7 Saat
+
+            rotateWheel();
+        }
+
+        function rotateWheel() {
+            spinTime += 30;
+            if (spinTime >= spinTimeTotal) {
+                stopRotateWheel();
+                return;
+            }
+            const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+            startAngle += (spinAngle * Math.PI / 180);
+            drawWheel();
+            playWhooshSFX();
+            spinTimeout = setTimeout(rotateWheel, 30);
+        }
+
+        function stopRotateWheel() {
+            clearTimeout(spinTimeout);
+            isSpinning = false;
+
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const numOptions = eligibleForSpin.length;
+            const arc = Math.PI * 2 / numOptions;
+
+            // Pengiraan Pemenang berasaskan kedudukan pointer di atas (270 darjah / 1.5 PI)
+            let degrees = startAngle * 180 / Math.PI + 90;
+            let arcd = arc * 180 / Math.PI;
+            let index = Math.floor((360 - degrees % 360) / arcd);
+            index = (index + numOptions) % numOptions;
+
+            const winner = eligibleForSpin[index];
+            selectedKeepers.push(winner);
+
+            // Buang pemenang daripada senarai roda berikutnya
+            eligibleForSpin.splice(index, 1);
+
+            showWinnerModal(winner);
+        }
+
+        function easeOut(t, b, c, d) {
+            const ts = (t /= d) * t;
+            const tc = ts * t;
+            return b + c * (tc + -3 * ts + 3 * t);
+        }
+
+        /* ================= POPUP KEPUTUSAN SPIN #1 & #2 ================= */
+        function showWinnerModal(winner) {
+            playVictorySFX();
+
+            const modal = document.getElementById('winnerModal');
+            document.getElementById('winnerRoleText').innerText = `PENJAGA LAMPU ISYARAT #${currentRound}`;
+            document.getElementById('winnerImg').src = winner.image;
+            document.getElementById('winnerName').innerText = winner.name;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            if (currentRound === 1) {
+                playVoice('vo4');
+            } else {
+                playVoice('vo6');
+                document.getElementById('btnNextSpin').innerHTML = `
+                    <span>LIHAT KEPUTUSAN AKHIR!</span>
+                    <i class="fa-solid fa-trophy"></i>
+                `;
+            }
+        }
+
+        function prepareSecondSpin() {
+            playClickSFX();
+            document.getElementById('winnerModal').classList.add('hidden');
+            document.getElementById('winnerModal').classList.remove('flex');
+
+            if (currentRound === 1) {
+                currentRound = 2;
+                document.getElementById('spinTitle').innerText = "JOM PILIH SEORANG LAGI! 🚦";
+                document.getElementById('spinSubtitle').innerText = "Pemilihan Penjaga Lampu Isyarat Kedua (#2)";
+                document.getElementById('btnSpinText').innerText = "SPIN LAGI!";
+                document.getElementById('btnSpin').disabled = false;
+
+                renderEligibleBar();
+                drawWheel();
+                playVoice('vo5');
+            } else {
+                // Selesai kedua-dua pusingan -> Ke Skrin Keputusan Akhir
+                showFinalResults();
+            }
+        }
+
+        /* ================= SKRIN 4: KEPUTUSAN AKHIR & CONFETTI ================= */
+        function showFinalResults() {
+            goToScreen('screen4');
+            playVoice('vo6');
+
+            document.getElementById('keeper1Img').src = selectedKeepers[0].image;
+            document.getElementById('keeper1Name').innerText = selectedKeepers[0].name;
+
+            document.getElementById('keeper2Img').src = selectedKeepers[1].image;
+            document.getElementById('keeper2Name').innerText = selectedKeepers[1].name;
+
+            startConfetti();
+        }
+
+        function startConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const particles = [];
+            const colorList = ['#FF4B4B', '#2ECC71', '#FFC107', '#AB47BC', '#4FC3F7'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 10 + 5,
+                    color: colorList[Math.floor(Math.random() * colorList.length)],
+                    speed: Math.random() * 3 + 2,
+                    angle: Math.random() * 360
+                });
+            }
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    p.y += p.speed;
+                    if (p.y > canvas.height) p.y = -10;
+                });
+                requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        /* ================= ULANG PERMAINAN ================= */
+        function replaySameStudents() {
+            playClickSFX();
+            eligibleForSpin = [...students];
+            selectedKeepers = [];
+            currentRound = 1;
+            document.getElementById('btnSpin').disabled = false;
+
+            prepareSpinScreen();
+            goToScreen('screen3');
+        }
+
+        function startNewGame() {
+            playClickSFX();
+            students = [
+                { id: 1, name: '', image: '' },
+                { id: 2, name: '', image: '' },
+                { id: 3, name: '', image: '' },
+                { id: 4, name: '', image: '' },
+                { id: 5, name: '', image: '' }
+            ];
+            initStudentCards();
+            goToScreen('screen2');
+        }
+
+        /* ================= SISTEM RAKAMAN VOICE OVER GURU ================= */
+        function openVoiceModal() {
+            playClickSFX();
+            const modal = document.getElementById('voiceModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeVoiceModal() {
+            playClickSFX();
+            const modal = document.getElementById('voiceModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function renderVoiceList() {
+            const container = document.getElementById('voiceListContainer');
+            container.innerHTML = '';
+
+            voiceConfigs.forEach(vo => {
+                const item = document.createElement('div');
+                item.className = "bg-orange-50 p-3 rounded-2xl border-2 border-orange-200 flex flex-col gap-2";
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-800 text-sm">${vo.label}</span>
+                        <span id="badge_${vo.id}" class="text-xs px-2 py-0.5 rounded-full ${teacherAudios[vo.id] ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'} font-bold">
+                            ${teacherAudios[vo.id] ? 'Ada Suara' : 'Tiada Audio'}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 italic">${vo.desc}</p>
+                    
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <!-- Record Button -->
+                        <button id="btnRec_${vo.id}" onclick="toggleRecordVoice('${vo.id}')" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-circle"></i> Rakam Suara
+                        </button>
+
+                        <!-- Upload Button -->
+                        <label class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-upload"></i> Muat Naik
+                            <input type="file" accept="audio/*" class="hidden" onchange="handleAudioUpload(event, '${vo.id}')">
+                        </label>
+
+                        <!-- Play Button -->
+                        <button id="btnPlay_${vo.id}" onclick="playVoice('${vo.id}')" ${!teacherAudios[vo.id] ? 'disabled' : ''} class="bg-green-500 hover:bg-green-600 disabled:opacity-40 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-play"></i> Dengar
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Rakaman Microfon Tempatan
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingVoId = null;
+
+        async function toggleRecordVoice(voId) {
+            playClickSFX();
+            const btn = document.getElementById(`btnRec_${voId}`);
+
+            if (recordingVoId === voId && mediaRecorder && mediaRecorder.state === 'recording') {
+                // Hentikan Rakaman
+                mediaRecorder.stop();
+                btn.innerHTML = `<i class="fa-solid fa-circle"></i> Rakam Suara`;
+                btn.classList.remove('animate-pulse', 'bg-black');
+                btn.classList.add('bg-red-500');
+                recordingVoId = null;
+            } else {
+                // Mula Rakaman
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        teacherAudios[voId] = URL.createObjectURL(audioBlob);
+                        renderVoiceList();
+                    };
+
+                    mediaRecorder.start();
+                    recordingVoId = voId;
+
+                    btn.innerHTML = `<i class="fa-solid fa-square"></i> Hentikan`;
+                    btn.classList.remove('bg-red-500');
+                    btn.classList.add('bg-black', 'animate-pulse');
+                } catch (err) {
+                    alert("Akses mikrofón tidak dibenarkan atau tidak disokong pada peranti ini.");
+                }
+            }
+        }
+
+        function handleAudioUpload(event, voId) {
+            const file = event.target.files[0];
+            if (file) {
+                teacherAudios[voId] = URL.createObjectURL(file);
+                renderVoiceList();
+            }
+        }
+
+        function playVoice(voId) {
+            if (teacherAudios[voId]) {
+                const audio = new Audio(teacherAudios[voId]);
+                audio.play();
+            }
+        }
+    </script>
+</body>
+</html>
